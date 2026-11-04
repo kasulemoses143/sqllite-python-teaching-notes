@@ -1,6 +1,6 @@
 # Python + SQLite (sqlite3): Complete Teaching Notes
 
-Adapted from the supplied 81-page PDF, credited there to @kamos, 4 November 2026. Read [editorial notes](EDITORIAL_NOTES.md) for documented corrections.
+Adapted from the supplied 81-page PDF, credited there to @kamos, 4 November 2026. Code formatting and technical explanations have been corrected where needed.
 
 ## Course overview
 
@@ -2904,3 +2904,10 @@ Check your version with `sqlite3.sqlite_version`. Almost any current Python inst
 
 6. Testing: use `pytest` with an in-memory database fixture.
 
+
+## Further references
+
+- [Python sqlite3 documentation](https://docs.python.org/3/library/sqlite3.html)
+- [SQLite CREATE TABLE and constraints](https://www.sqlite.org/lang_createtable.html)
+- [SQLite foreign key enforcement](https://www.sqlite.org/pragma.html#pragma_foreign_keys)
+- [SQLite online backup](https://www.sqlite.org/backup.html)

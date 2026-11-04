@@ -1,8 +1,10 @@
 # Python + SQLite (sqlite3): Complete Teaching Notes
 
-A complete course for students who know Python basics and are learning databases. Adapted from the supplied **81-page PDF**, credited there to **@kamos, 4 November 2026**. All 14 parts, both projects, exercises and solutions, the eight-session teaching plan, cheat sheets and glossary are included.
+[Read the complete teaching notes](TEACHING_NOTES.md).
 
-Examples use school fees in UGX, shop stock and coffee harvests. Read the notes in order; short snippets build on the schema and data in their lesson. Use a fresh database when changing lesson schemas. Not every snippet is a standalone program: some deliberately demonstrate errors or show SQL syntax templates.
+A course for students who know Python basics. It includes 14 parts, exercises with solutions, two projects, an eight-session lesson plan, cheat sheets and a glossary. Examples cover school fees in UGX, shop stock and coffee harvests.
+
+Adapted from the supplied 81-page teaching notes, credited to **@kamos, 4 November 2026**. Code formatting and technical explanations have been corrected where needed.
 
 ## Contents
 
@@ -22,25 +24,22 @@ Examples use school fees in UGX, shop stock and coffee harvests. Read the notes 
 - [Part 13: Exercises with solutions](TEACHING_NOTES.md#part-13-exercises-with-solutions)
 - [Part 14: Lesson plan, teaching tips and cheat sheet](TEACHING_NOTES.md#part-14-lesson-plan-teaching-tips-and-cheat-sheet)
 
-## Run the companion examples
+## Runnable examples
 
-Use Python 3.10 or later with the standard-library sqlite3 module. SQLite 3.25 or later runs the core projects and their window-function reports. Later optional features have their own version requirements in Part 14. No pip install is required for the core examples; the pandas section is optional.
+| File | What it teaches |
+| --- | --- |
+| [products.py](products.py) | Create and populate the shop practice data from Part 5. |
+| [school_manager.py](school_manager.py) | Run the school management project from Part 10. |
+| [coffee_farm.py](coffee_farm.py) | Run the coffee farm reports from Part 11. |
+
+Use Python 3.10 or later with the standard-library sqlite3 module. SQLite 3.25 or later is required for the project window-function reports. Optional newer features list their version requirements in Part 14.
 
 ```sh
-python --version
-python -c "import sqlite3; print(sqlite3.sqlite_version)"
 python products.py
 python school_manager.py
 python coffee_farm.py
-python -m unittest -v test_examples
 ```
 
-Use `python3` if that is how Python is installed on your computer. The school menu stores `school.db` beside its script. The product and farm demos use fresh in-memory databases on each run. The farm demo writes `cash_book.csv` to your current working directory. The school CSV export also uses the current working directory; backups go beside the school script.
+Use `python3` if that is how Python is installed on your computer. The school project creates `school.db` beside its script. Its CSV export uses the current working directory, and backups go beside the script. The product and farm demos start with fresh in-memory databases on each run; the farm demo writes `cash_book.csv` in the current working directory.
 
-The school manager registers and searches students, manages courses and enrolments, records payments, reports fee balances and monthly income, exports CSV and backs up data. The farm example prints yield, stock, income, expenses and a running cash book. Its income calculations use REAL kilos and are approximate reporting values; a financial ledger should use a defined integer weight unit and rounding policy.
-
-## Source and corrections
-
-The [original PDF](teaching-notes.pdf) is retained unchanged for comparison. Read [editorial notes](EDITORIAL_NOTES.md) for technical clarifications and the differences between the printed projects and the runnable files. [Validation](VALIDATION.md) records what was checked. No new license has been assigned to the supplied material.
-
-The full course is in [TEACHING_NOTES.md](TEACHING_NOTES.md).
+Short snippets in the notes depend on earlier lesson setup. Practice different lesson schemas in fresh databases. The farm chapter uses a file-based walkthrough; run its sample inserts once on a fresh database. The companion farm script uses memory so rerunning it does not duplicate sample records.
