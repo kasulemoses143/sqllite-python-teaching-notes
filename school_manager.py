@@ -5,61 +5,9 @@ from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "school.db"
+DB_PATH = Path(__file__).parent / "school_project.db"
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS students (
-    student_id INTEGER PRIMARY KEY,
-    full_name  TEXT NOT NULL,
-    email      TEXT UNIQUE,
-    phone      TEXT,
-    joined_on  TEXT NOT NULL DEFAULT (date('now', 'localtime')),
-    is_active  INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1))
-);
-
-CREATE TABLE IF NOT EXISTS courses (
-    course_id INTEGER PRIMARY KEY,
-    title     TEXT NOT NULL UNIQUE,
-    fee_ugx   INTEGER NOT NULL CHECK (fee_ugx >= 0)
-);
-
-CREATE TABLE IF NOT EXISTS enrolments (
-    enrolment_id INTEGER PRIMARY KEY,
-    student_id   INTEGER NOT NULL,
-    course_id    INTEGER NOT NULL,
-    enrolled_on  TEXT NOT NULL DEFAULT (date('now', 'localtime')),
-    UNIQUE (student_id, course_id),
-    FOREIGN KEY (student_id) REFERENCES students(student_id),
-    FOREIGN KEY (course_id)  REFERENCES courses(course_id)
-);
-
-CREATE TABLE IF NOT EXISTS payments (
-    payment_id   INTEGER PRIMARY KEY,
-    enrolment_id INTEGER NOT NULL,
-    amount_ugx   INTEGER NOT NULL CHECK (amount_ugx > 0),
-    paid_on      TEXT NOT NULL DEFAULT (date('now', 'localtime')),
-    method       TEXT NOT NULL DEFAULT 'cash',
-    FOREIGN KEY (enrolment_id) REFERENCES enrolments(enrolment_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_enrolments_student ON enrolments(student_id);
-CREATE INDEX IF NOT EXISTS idx_payments_enrolment ON payments(enrolment_id);
-
-CREATE VIEW IF NOT EXISTS v_fee_balances AS
-SELECT e.enrolment_id,
-       s.student_id,
-       s.full_name,
-       s.phone,
-       c.title,
-       c.fee_ugx,
-       COALESCE(SUM(p.amount_ugx), 0)              AS paid_ugx,
-       c.fee_ugx - COALESCE(SUM(p.amount_ugx), 0)  AS balance_ugx
-FROM enrolments e
-JOIN students s ON s.student_id = e.student_id
-JOIN courses  c ON c.course_id  = e.course_id
-LEFT JOIN payments p ON p.enrolment_id = e.enrolment_id
-GROUP BY e.enrolment_id;
-"""
+SCHEMA = (Path(__file__).parent / "sql" / "school_schema.sql").read_text(encoding="utf-8")
 
 STARTER_COURSES = [
     ("Python Basics", 300000),
@@ -124,7 +72,7 @@ def list_courses(conn):
     return conn.execute(
         """SELECT c.course_id, c.title, c.fee_ugx, COUNT(e.enrolment_id) AS students
            FROM courses c LEFT JOIN enrolments e ON e.course_id = c.course_id
-           GROUP BY c.course_id ORDER BY c.title"""
+           GROUP BY c.course_id, c.title, c.fee_ugx ORDER BY c.title"""
     ).fetchall()
 
 def add_course(conn, title, fee_ugx):
@@ -142,8 +90,13 @@ def enrol(conn, student_id, course_id):
     try:
         with conn:
             cur = conn.execute(
-                "INSERT INTO enrolments (student_id, course_id) VALUES (?, ?)", (student_id, course_id)
+                """INSERT INTO enrolments (student_id, course_id, agreed_fee_ugx)
+                   SELECT ?, course_id, fee_ugx FROM courses WHERE course_id = ?""",
+                (student_id, course_id)
             )
+            if cur.rowcount != 1:
+                print("Unknown course ID.")
+                return None
             return cur.lastrowid
     except sqlite3.IntegrityError as e:
         if "UNIQUE" in str(e):
@@ -157,7 +110,7 @@ def enrol(conn, student_id, course_id):
 def get_balance(conn, enrolment_id):
     row = conn.execute(
         "SELECT balance_ugx FROM v_fee_balances WHERE enrolment_id = ?",
-(enrolment_id,)
+        (enrolment_id,)
     ).fetchone()
     return None if row is None else row["balance_ugx"]
 
@@ -291,3 +244,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

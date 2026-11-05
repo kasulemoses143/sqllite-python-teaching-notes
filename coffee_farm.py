@@ -1,4 +1,4 @@
-"""Part 11 demo: fresh in-memory data; exports cash_book.csv to the working directory."""
+"""Optional farm demo: fresh in-memory data; exports cash_book.csv to the working directory."""
 import csv
 import sqlite3
 
@@ -79,7 +79,7 @@ show("Yield per plot", """
 kilos_per_tree
     FROM plots p
     LEFT JOIN harvests h ON h.plot_id = p.plot_id
-    GROUP BY p.plot_id
+    GROUP BY p.plot_id, p.name, p.trees
     ORDER BY kilos_per_tree DESC
 """)
 
@@ -96,11 +96,11 @@ show("Stock in store (kg)", """
          - (SELECT COALESCE(SUM(kilos), 0) FROM sales)  AS kilos_in_store
 """)
 
-show("Profit", """
+show("Cash surplus (sales assumed paid immediately)", """
     SELECT (SELECT COALESCE(SUM(kilos * price_per_kilo_ugx), 0) FROM sales) AS income_ugx,
            (SELECT COALESCE(SUM(amount_ugx), 0) FROM expenses) AS costs_ugx,
            (SELECT COALESCE(SUM(kilos * price_per_kilo_ugx), 0) FROM sales)
-         - (SELECT COALESCE(SUM(amount_ugx), 0) FROM expenses) AS profit_ugx
+         - (SELECT COALESCE(SUM(amount_ugx), 0) FROM expenses) AS cash_surplus_ugx
 """)
 
 show("Expenses by category", """
@@ -115,20 +115,21 @@ show("Expenses by category", """
 ledger_sql = """
     WITH ledger AS (
         SELECT sold_on AS day,
+               1 AS source_order, sale_id AS source_id,
                'Sale to ' || buyer AS item,
                CAST(kilos * price_per_kilo_ugx AS INTEGER) AS amount_ugx
         FROM sales
         UNION ALL
-        SELECT spent_on,
+        SELECT spent_on, 2, expense_id,
                category || ': ' || COALESCE(description, ''),
                -amount_ugx
         FROM expenses
     )
     SELECT day, item, amount_ugx,
-           SUM(amount_ugx) OVER (ORDER BY day, item
+           SUM(amount_ugx) OVER (ORDER BY day, source_order, source_id
                                  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_balance_ugx
     FROM ledger
-    ORDER BY day, item
+    ORDER BY day, source_order, source_id
 """
 show("Cash book", ledger_sql)
 
@@ -152,3 +153,4 @@ with open("cash_book.csv", "w", newline="", encoding="utf-8") as f:
     writer.writerows(cur.fetchall())
 
 conn.close()
+
