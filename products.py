@@ -1,33 +1,26 @@
+"""Reusable shop practice connection; no persistent file or third-party packages."""
+from pathlib import Path
 import sqlite3
 
-conn = sqlite3.connect(":memory:")
-cur = conn.cursor()
 
-cur.execute("""
-    CREATE TABLE products (
-        product_id INTEGER PRIMARY KEY,
-        name       TEXT NOT NULL,
-        category   TEXT NOT NULL,
-        price_ugx  INTEGER NOT NULL,
-        stock_qty  INTEGER NOT NULL
-    )
-""")
+def get_connection():
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    setup = Path(__file__).parent / "sql" / "shop_setup.sql"
+    conn.executescript(setup.read_text(encoding="utf-8"))
+    return conn
 
-products = [
-    ("Rice 5kg",        "Food",      22000, 40),
-    ("Sugar 1kg",       "Food",       5500, 120),
-    ("Cooking oil 3L",  "Food",      24000, 25),
-    ("Bar soap",        "Household",  2500, 200),
-    ("Detergent 1kg",   "Household",  9000, 60),
-    ("Exercise book",   "Stationery", 1500, 300),
-    ("Pen (blue)",      "Stationery",  500, 500),
-    ("Phone charger",   "Electronics",15000, 18),
-    ("Earphones",       "Electronics",12000, 0),
-]
-cur.executemany(
-    "INSERT INTO products (name, category, price_ugx, stock_qty) VALUES (?, ?, ?, ?)",
-    products
-)
-conn.commit()
-print("Products:", conn.execute("SELECT COUNT(*) FROM products").fetchone()[0])
-conn.close()
+
+def main():
+    from contextlib import closing
+
+    with closing(get_connection()) as conn:
+        for row in conn.execute(
+            "SELECT name, price_ugx, stock_qty FROM products ORDER BY product_id"
+        ):
+            print(dict(row))
+        print("Products:", conn.execute("SELECT COUNT(*) FROM products").fetchone()[0])
+
+
+if __name__ == "__main__":
+    main()
